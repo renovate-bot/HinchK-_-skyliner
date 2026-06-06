@@ -19,6 +19,8 @@ interface SkylineDataStreamProps {
   speed?: number;
   density?: number;
   imageSrc?: string;
+  lumaThreshold?: number;
+  invertMask?: boolean;
 }
 
 // Convert hex to rgb array [r, g, b]
@@ -40,6 +42,8 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
   speed = 45,
   density = 10,
   imageSrc = '/san-diego-skyline-night.png',
+  lumaThreshold = 30,
+  invertMask = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -193,9 +197,10 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
             const isEdge = outlineMap[idx] === 255;
             
             let shouldDraw = false;
-            if (renderStyle === 'silhouette' && luma > 30) shouldDraw = true;
+            const thresholdCondition = invertMask ? luma < lumaThreshold : luma > lumaThreshold;
+            if (renderStyle === 'silhouette' && thresholdCondition) shouldDraw = true;
             if (renderStyle === 'outline' && isEdge) shouldDraw = true;
-            if (renderStyle === 'luma-blend' && luma > 10) shouldDraw = true;
+            if (renderStyle === 'luma-blend' && thresholdCondition) shouldDraw = true;
 
             if (shouldDraw) {
               const char = chars[Math.floor(Math.random() * chars.length)];
@@ -233,9 +238,10 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
              const isEdge = outlineMap[idx] === 255;
 
              let shouldDraw = false;
-             if (renderStyle === 'silhouette' && luma > 40) shouldDraw = true;
+             const thresholdCondition = invertMask ? luma < lumaThreshold : luma > lumaThreshold;
+             if (renderStyle === 'silhouette' && thresholdCondition) shouldDraw = true;
              if (renderStyle === 'outline' && isEdge) shouldDraw = true;
-             if (renderStyle === 'luma-blend' && luma > 20) shouldDraw = true;
+             if (renderStyle === 'luma-blend' && thresholdCondition) shouldDraw = true;
 
              if (shouldDraw) {
                 // Mutate flicker state

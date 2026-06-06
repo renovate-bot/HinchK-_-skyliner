@@ -69,6 +69,9 @@ function App() {
   const [speed, setSpeed] = useState<number>(45);
   const [density, setDensity] = useState<number>(10);
   
+  const [lumaThreshold, setLumaThreshold] = useState<number>(30);
+  const [invertMask, setInvertMask] = useState<boolean>(false);
+  
   const [activeImageId, setActiveImageId] = useState<string>('sd-night');
   const [customImage, setCustomImage] = useState<string | null>(null);
 
@@ -103,6 +106,8 @@ function App() {
         speed={speed} 
         density={density} 
         imageSrc={currentImageSrc}
+        lumaThreshold={lumaThreshold}
+        invertMask={invertMask}
       />
 
       {/* ========================================================================= */}
@@ -241,6 +246,33 @@ function App() {
                 }`}
               >
                 DATA MATRIX
+              </button>
+            </div>
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                <span>Luma Threshold</span>
+                <span className="text-white">{lumaThreshold}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="255"
+                step="1"
+                value={lumaThreshold}
+                onChange={(e) => setLumaThreshold(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <label className="text-[10px] font-bold text-slate-400 tracking-widest uppercase cursor-pointer">
+                Invert Luma Mask
+              </label>
+              <button 
+                onClick={() => setInvertMask(!invertMask)}
+                className={`w-8 h-4 rounded-full transition-colors relative ${invertMask ? 'bg-white/80' : 'bg-black/40 border border-white/20'}`}
+              >
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-300 ${invertMask ? 'left-4 shadow-sm bg-black' : 'left-0.5'}`} />
               </button>
             </div>
           </div>
