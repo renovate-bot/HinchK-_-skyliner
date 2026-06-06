@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import SkylineDataStream from './components/SkylineDataStream';
-import type { ThemePalette, RenderStyle, MotionType } from './components/SkylineDataStream';
+import type { ThemePalette } from './components/SkylineDataStream';
 
 const PALETTES: Record<string, { name: string, data: ThemePalette }> = {
   knicks: {
@@ -63,11 +63,9 @@ const PREDEFINED_IMAGES = [
 
 function App() {
   const [activePalette, setActivePalette] = useState<string>('knicks');
-  const [renderStyle, setRenderStyle] = useState<RenderStyle>('silhouette');
-  const [motionType, setMotionType] = useState<MotionType>('falling');
   const [glyphMode, setGlyphMode] = useState<'binary' | 'matrix'>('matrix');
   const [speed, setSpeed] = useState<number>(45);
-  const [density, setDensity] = useState<number>(10);
+  const [density, setDensity] = useState<number>(8);
   
   const [lumaThreshold, setLumaThreshold] = useState<number>(30);
   const [invertMask, setInvertMask] = useState<boolean>(false);
@@ -93,7 +91,7 @@ function App() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden font-mono" style={{ backgroundColor: currentPalette.background }}>
+    <div className="relative w-full h-screen overflow-hidden font-mono">
       
       {/* ========================================================================= */}
       {/* CANVAS ENGINE */}
@@ -101,8 +99,6 @@ function App() {
       <SkylineDataStream 
         mode={glyphMode} 
         palette={currentPalette} 
-        renderStyle={renderStyle} 
-        motionType={motionType}
         speed={speed} 
         density={density} 
         imageSrc={currentImageSrc}
@@ -125,7 +121,7 @@ function App() {
 
           {/* SOURCE IMAGE SELECTOR */}
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Source Image</label>
+            <h3 className="text-xs font-bold tracking-widest text-slate-300">SOURCE IMAGE</h3>
             <div className="grid grid-cols-3 gap-2">
               {PREDEFINED_IMAGES.map((img) => (
                 <button
@@ -145,87 +141,39 @@ function App() {
                 </button>
               ))}
             </div>
-            <div className="relative mt-2">
+            <label className="block w-full">
               <input 
                 type="file" 
                 accept="image/*" 
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={handleFileUpload} 
+                className="hidden" 
               />
-              <button className={`w-full px-3 py-2 text-[10px] rounded border text-center transition-all ${
-                activeImageId === 'custom'
-                  ? 'border-white/40 bg-white/10 text-white shadow-inner'
-                  : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
-              }`}>
-                {activeImageId === 'custom' ? 'CUSTOM UPLOAD ACTIVE' : '+ UPLOAD CUSTOM IMAGE'}
-              </button>
-            </div>
-            <p className="text-[9px] text-slate-500 leading-tight">
-              Tip: High-contrast photos (night cityscapes, blueprints) produce the best stylized results.
-            </p>
+              <div className="w-full px-4 py-2 border border-white/10 hover:border-white/30 rounded text-center text-xs text-slate-400 hover:text-white cursor-pointer transition-colors bg-black/40">
+                + UPLOAD CUSTOM IMAGE
+              </div>
+            </label>
+            <p className="text-[10px] text-slate-500 italic">Tip: High-contrast photos (night cityscapes, blueprints) produce the best stylized results.</p>
           </div>
 
           {/* PALETTE SELECTOR */}
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Color Palette</label>
-            <div className="grid grid-cols-1 gap-2">
+            <h3 className="text-xs font-bold tracking-widest text-slate-300">COLOR PALETTE</h3>
+            <div className="space-y-2">
               {Object.entries(PALETTES).map(([key, { name, data }]) => (
                 <button
                   key={key}
                   onClick={() => setActivePalette(key)}
-                  className={`flex items-center justify-between px-3 py-2 text-xs rounded border transition-all ${
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded border transition-all ${
                     activePalette === key 
                       ? 'border-white/40 bg-white/10 text-white shadow-inner' 
                       : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
                   }`}
                 >
-                  <span>{name}</span>
-                  <div className="flex space-x-1">
-                    <span className="w-3 h-3 rounded-full shadow-sm border border-black/50" style={{ backgroundColor: data.primary }} />
-                    <span className="w-3 h-3 rounded-full shadow-sm border border-black/50" style={{ backgroundColor: data.secondary }} />
+                  <span className="uppercase tracking-wider">{name}</span>
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.primary }} />
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.secondary }} />
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* RENDER STYLE */}
-          <div className="space-y-3">
-            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Render Style</label>
-            <div className="grid grid-cols-1 gap-2">
-              {(['silhouette', 'outline', 'luma-blend'] as RenderStyle[]).map((style) => (
-                <button
-                  key={style}
-                  onClick={() => setRenderStyle(style)}
-                  className={`px-3 py-2 text-xs rounded border text-left transition-all ${
-                    renderStyle === style 
-                      ? 'border-white/40 bg-white/10 text-white' 
-                      : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
-                  }`}
-                >
-                  {style === 'silhouette' && 'SILHOUETTE MASK'}
-                  {style === 'outline' && 'EDGE OUTLINE (SOBEL)'}
-                  {style === 'luma-blend' && 'LUMA GLITCH BLEND'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* MOTION TYPE */}
-          <div className="space-y-3">
-            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Motion Dynamics</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['falling', 'flicker'] as MotionType[]).map((motion) => (
-                <button
-                  key={motion}
-                  onClick={() => setMotionType(motion)}
-                  className={`px-3 py-2 text-xs rounded border text-center transition-all uppercase ${
-                    motionType === motion 
-                      ? 'border-white/40 bg-white/10 text-white' 
-                      : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
-                  }`}
-                >
-                  {motion}
                 </button>
               ))}
             </div>
@@ -252,6 +200,42 @@ function App() {
                 DATA MATRIX
               </button>
             </div>
+          </div>
+
+          {/* SLIDERS */}
+          <div className="space-y-4 pt-2 border-t border-white/5">
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                <span>Density (Grid Size)</span>
+                <span className="text-white">{density}px</span>
+              </div>
+              <input
+                type="range"
+                min="4"
+                max="16"
+                step="1"
+                value={density}
+                onChange={(e) => setDensity(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                <span>Flicker Speed</span>
+                <span className="text-white">{speed}</span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
+              />
+            </div>
+
             <div className="space-y-2 pt-2 border-t border-white/5">
               <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
                 <span>Luma Threshold</span>
@@ -264,7 +248,7 @@ function App() {
                 step="1"
                 value={lumaThreshold}
                 onChange={(e) => setLumaThreshold(Number(e.target.value))}
-                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none"
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
               />
             </div>
 
@@ -278,40 +262,6 @@ function App() {
               >
                 <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-300 ${invertMask ? 'left-4 shadow-sm bg-black' : 'left-0.5'}`} />
               </button>
-            </div>
-          </div>
-
-          {/* SLIDERS */}
-          <div className="space-y-5 border-t border-white/10 pt-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-                <span>Density (Font Size)</span>
-                <span className="text-white">{density}px</span>
-              </div>
-              <input
-                type="range"
-                min="6"
-                max="24"
-                step="2"
-                value={density}
-                onChange={(e) => setDensity(Number(e.target.value))}
-                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-                <span>Speed Delay</span>
-                <span className="text-white">{speed}ms</span>
-              </div>
-              <input
-                type="range"
-                min="15"
-                max="120"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none"
-              />
             </div>
           </div>
 
