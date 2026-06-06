@@ -2,16 +2,16 @@ import React, { useEffect, useRef } from 'react';
 
 interface SkylineDataStreamProps {
   mode?: 'binary' | 'matrix';
-  color?: string; // hex string e.g., '#2dd4bf'
-  speed?: number; // frame delay in ms
-  density?: number; // grid cell size in px
+  color?: string; // used for subtle tinting
+  speed?: number; // frame delay
+  density?: number; // smaller = higher res text
   imageSrc?: string;
 }
 
 const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
   mode = 'matrix',
-  color = '#2dd4bf',
-  speed = 50,
+  color = '#2dd4bf', // Teal default
+  speed = 45,
   density = 10,
   imageSrc = '/san-diego-skyline-night.png',
 }) => {
@@ -26,18 +26,16 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
     let animationFrameId: number;
     let lastDrawTime = 0;
 
-    // Load the background image
     const image = new Image();
     image.src = imageSrc;
     
-    // Core grid array storing active pixels
-    let grid: { x: number, y: number, brightness: number, char: string }[] = [];
     let columns = 0;
     let rows = 0;
-    let drops: number[] = []; // tracks the "falling" scanlines
+    let drops: number[] = [];
+    let lumaMap: Uint8Array = new Uint8Array(0);
 
     const binaryChars = '01'.split('');
-    const matrixChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*()_+'.split('');
+    const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%""\'#&_(),.;:?!\\|{}<>[]^~'.split('');
 
     const initGrid = () => {
       if (!image.complete || image.naturalWidth === 0) return;
@@ -48,14 +46,13 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
       columns = Math.ceil(canvas.width / density);
       rows = Math.ceil(canvas.height / density);
 
-      // Create an offscreen canvas to sample the image pixels
+      // Extract pixel brightness into a 1D array for O(1) lookup
       const offCanvas = document.createElement('canvas');
       offCanvas.width = columns;
       offCanvas.height = rows;
       const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
       if (!offCtx) return;
 
-      // Draw image scaled to cover the offscreen canvas
       const imgRatio = image.naturalWidth / image.naturalHeight;
       const canvasRatio = canvas.width / canvas.height;
       
@@ -72,45 +69,28 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
         offsetY = (offCanvas.height - drawHeight) / 2;
       }
 
-      // Draw the image downscaled to grid resolution
       offCtx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
-      
-      // Extract pixel data
       const imgData = offCtx.getImageData(0, 0, columns, rows).data;
       
-      grid = [];
-      const chars = mode === 'binary' ? binaryChars : matrixChars;
+      lumaMap = new Uint8Array(columns * rows);
 
-      // Map pixels to grid
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < columns; x++) {
           const index = (y * columns + x) * 4;
           const r = imgData[index];
           const g = imgData[index + 1];
           const b = imgData[index + 2];
-          
-          // Calculate perceived brightness (luma)
-          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-          
-          // Only map bright areas (the skyline buildings) to characters
-          if (brightness > 25) {
-             grid.push({
-               x,
-               y,
-               brightness,
-               char: chars[Math.floor(Math.random() * chars.length)]
-             });
-          }
+          // Perceived brightness mapping
+          lumaMap[y * columns + x] = (r * 0.299 + g * 0.587 + b * 0.114);
         }
       }
 
-      // Initialize the falling scanlines
+      // Initialize drops with random negative starting Y positions to stagger the rain
       drops = Array.from({ length: columns }).fill(0).map(() => Math.floor(Math.random() * -rows));
     };
 
     image.onload = initGrid;
 
-    // Handle resize
     const handleResize = () => {
       initGrid();
     };
@@ -122,80 +102,56 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
       if (timestamp - lastDrawTime < speed) return;
       lastDrawTime = timestamp;
 
-      // Clear the canvas with slight alpha to create motion trails
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.2)'; 
+      // Dark alpha fade to create the trailing effect
+      // Extremely dark to simulate the deep pitch-black Spartan aesthetic
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.15)'; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.font = `${density}px monospace`;
+      ctx.font = `600 ${density}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // Parse theme hex color to RGB
-      let r = 45, g = 212, b = 191; // Default teal-400
-      if (color.startsWith('#') && color.length === 7) {
-        r = parseInt(color.slice(1, 3), 16);
-        g = parseInt(color.slice(3, 5), 16);
-        b = parseInt(color.slice(5, 7), 16);
-      }
-
       const chars = mode === 'binary' ? binaryChars : matrixChars;
 
-      // Draw the mapped ASCII grid
-      for (let i = 0; i < grid.length; i++) {
-        const cell = grid[i];
+      // Render the falling rain heads
+      for (let x = 0; x < columns; x++) {
+        const y = drops[x];
         
-        // Randomly mutate characters to simulate active data
-        if (Math.random() > 0.95) {
-           cell.char = chars[Math.floor(Math.random() * chars.length)];
-        }
+        // Bounds check
+        if (y >= 0 && y < rows) {
+          const luma = lumaMap[y * columns + x];
+          
+          // Only render characters if this pixel is over a bright spot in the building
+          if (luma > 30) {
+            const char = chars[Math.floor(Math.random() * chars.length)];
+            const px = x * density + density / 2;
+            const py = y * density + density / 2;
 
-        const px = cell.x * density + density / 2;
-        const py = cell.y * density + density / 2;
+            // Pure crisp white/silver for the data head
+            ctx.fillStyle = `rgba(241, 245, 249, ${luma / 255})`;
+            ctx.fillText(char, px, py);
 
-        const dropY = drops[cell.x];
-        
-        // Calculate distance from the falling drop head
-        let distance = cell.y - dropY;
-        if (distance < 0) distance += rows; // wrap around for continuous loop
-        
-        // Base brightness from the image mapped to 0-1
-        const baseIntensity = cell.brightness / 255;
-        
-        // Add a flare multiplier if near the drop head
-        const flare = distance < 12 && distance >= 0 ? 1 - (distance / 12) : 0;
-        
-        // Final pixel intensity calculation
-        const finalIntensity = Math.min(1, (baseIntensity * 0.4) + (flare * 1.5));
-        
-        // Draw the character if it's visible enough
-        if (finalIntensity > 0.08) {
-          // 1. Draw base color
-          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${finalIntensity})`;
-          ctx.fillText(cell.char, px, py);
-
-          // 2. Chromatic Aberration / Glitch pass (only on the brightest active cells)
-          if (finalIntensity > 0.7) {
-             ctx.globalCompositeOperation = 'screen';
-             
-             // Cyan offset
-             ctx.fillStyle = `rgba(0, 255, 255, ${finalIntensity * 0.6})`;
-             ctx.fillText(cell.char, px - 1.5, py);
-             
-             // Magenta offset
-             ctx.fillStyle = `rgba(255, 0, 255, ${finalIntensity * 0.6})`;
-             ctx.fillText(cell.char, px + 1.5, py);
-             
-             ctx.globalCompositeOperation = 'source-over';
+            // Subtle Chromatic Aberration on bright areas
+            if (luma > 150) {
+              ctx.globalCompositeOperation = 'screen';
+              
+              ctx.fillStyle = `rgba(0, 255, 255, 0.7)`; // Cyan
+              ctx.fillText(char, px - 1, py);
+              
+              ctx.fillStyle = `rgba(255, 0, 255, 0.7)`; // Magenta
+              ctx.fillText(char, px + 1, py);
+              
+              ctx.globalCompositeOperation = 'source-over';
+            }
           }
         }
-      }
 
-      // Increment drops to move scanlines down
-      for (let i = 0; i < columns; i++) {
-        drops[i]++;
-        // Reset above top if it hits the bottom
-        if (drops[i] > rows) {
-           drops[i] = Math.floor(Math.random() * -20);
+        // Drop falls down
+        drops[x]++;
+
+        // Reset the drop to top randomly once it hits the bottom
+        if (drops[x] * density > canvas.height && Math.random() > 0.95) {
+          drops[x] = 0;
         }
       }
     };
@@ -211,7 +167,7 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
   return (
     <canvas 
       ref={canvasRef} 
-      className="absolute inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen" 
+      className="absolute inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen opacity-90" 
     />
   );
 };

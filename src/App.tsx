@@ -69,17 +69,13 @@ function App() {
   return (
     <div className="relative w-full min-h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col">
       {/* ========================================================================= */}
-      {/* LAYER 1: BASE SKYLINE NIGHT IMAGE (Dimmed to let ASCII shine) */}
+      {/* LAYER 1: BASE (Removed for pure Matrix Silhouette aesthetic) */}
       {/* ========================================================================= */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10 mix-blend-luminosity animate-pulse-glow transition-all duration-1000 z-0 pointer-events-none"
-        style={{ backgroundImage: "url('/san-diego-skyline-night.png')" }}
-      />
 
       {/* ========================================================================= */}
       {/* LAYER 2: ASCII MATRIX DATA STREAM CANVAS */}
       {/* ========================================================================= */}
-      <SkylineDataStream mode={mode} color={activeTheme.hex} speed={speed} density={12} />
+      <SkylineDataStream mode={mode} color={activeTheme.hex} speed={speed} density={8} />
 
       {/* ========================================================================= */}
       {/* LAYER 3: FOREGROUND UI */}
