@@ -56,9 +56,9 @@ const PALETTES: Record<string, { name: string, data: ThemePalette }> = {
 };
 
 const PREDEFINED_IMAGES = [
-  { id: 'sd-night', name: 'SD NIGHT', url: '/san-diego-skyline-night.png' },
-  { id: 'sd-sunset', name: 'SD SUNSET', url: '/san_diego_sunset.png' },
-  { id: 'coronado', name: 'CORONADO', url: '/coronado_bridge_night.png' },
+  { id: 'sd-night', name: 'SD NIGHT', url: '/san-diego-skyline-night.png', threshold: 30, invert: false },
+  { id: 'sd-sunset', name: 'SD SUNSET', url: '/san_diego_sunset.png', threshold: 100, invert: true },
+  { id: 'coronado', name: 'CORONADO', url: '/coronado_bridge_night.png', threshold: 50, invert: false },
 ];
 
 function App() {
@@ -130,7 +130,11 @@ function App() {
               {PREDEFINED_IMAGES.map((img) => (
                 <button
                   key={img.id}
-                  onClick={() => setActiveImageId(img.id)}
+                  onClick={() => {
+                    setActiveImageId(img.id);
+                    setLumaThreshold(img.threshold);
+                    setInvertMask(img.invert);
+                  }}
                   className={`px-2 py-2 text-[10px] rounded border text-center transition-all ${
                     activeImageId === img.id
                       ? 'border-white/40 bg-white/10 text-white shadow-inner' 
