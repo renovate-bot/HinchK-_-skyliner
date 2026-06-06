@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import SkylineDataStream from './components/SkylineDataStream';
 
 function App() {
-  const [mode, setMode] = useState<'binary' | 'lines'>('lines');
+  const [mode, setMode] = useState<'binary' | 'matrix'>('matrix');
   const [themeColor, setThemeColor] = useState<'teal' | 'purple' | 'emerald'>('teal');
   const [speed, setSpeed] = useState<number>(45);
   const [metrics, setMetrics] = useState({
@@ -69,17 +69,17 @@ function App() {
   return (
     <div className="relative w-full min-h-screen bg-slate-950 text-slate-100 overflow-hidden flex flex-col">
       {/* ========================================================================= */}
-      {/* LAYER 1: BASE SKYLINE NIGHT IMAGE */}
+      {/* LAYER 1: BASE SKYLINE NIGHT IMAGE (Dimmed to let ASCII shine) */}
       {/* ========================================================================= */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-luminosity animate-pulse-glow transition-all duration-1000 z-0 pointer-events-none"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10 mix-blend-luminosity animate-pulse-glow transition-all duration-1000 z-0 pointer-events-none"
         style={{ backgroundImage: "url('/san-diego-skyline-night.png')" }}
       />
 
       {/* ========================================================================= */}
-      {/* LAYER 2: MOTION DATA STREAM CANVAS */}
+      {/* LAYER 2: ASCII MATRIX DATA STREAM CANVAS */}
       {/* ========================================================================= */}
-      <SkylineDataStream mode={mode} color={activeTheme.hex} speed={speed} />
+      <SkylineDataStream mode={mode} color={activeTheme.hex} speed={speed} density={12} />
 
       {/* ========================================================================= */}
       {/* LAYER 3: FOREGROUND UI */}
@@ -174,7 +174,7 @@ function App() {
                 <div className="relative z-10 space-y-5">
                   {/* Mode Selector */}
                   <div className="space-y-2">
-                    <label className="block text-left text-xs font-mono text-slate-400">ANIMATION MODULE MODE</label>
+                    <label className="block text-left text-xs font-mono text-slate-400">GLYPH RENDERING MODULE</label>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setMode('binary')}
@@ -184,17 +184,17 @@ function App() {
                             : 'border-slate-800 bg-slate-900/40 text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        BINARY MATRIX
+                        BINARY (01)
                       </button>
                       <button
-                        onClick={() => setMode('lines')}
+                        onClick={() => setMode('matrix')}
                         className={`font-mono text-xs py-2 px-4 rounded border transition-all duration-200 ${
-                          mode === 'lines' 
+                          mode === 'matrix' 
                             ? `${activeTheme.border} ${activeTheme.bgMuted} ${activeTheme.text} font-bold` 
                             : 'border-slate-800 bg-slate-900/40 text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        FIBER OPTICS
+                        DATA MATRIX
                       </button>
                     </div>
                   </div>
@@ -294,17 +294,17 @@ function App() {
 
             <div className="glass-morphism rounded-lg p-6 border hover:border-slate-700 transition-all duration-300 hover:translate-y-[-2px] group">
               <span className={`block font-mono text-xs ${activeTheme.text} mb-2`}>02 // ZERO RENDERING JANK</span>
-              <h3 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-slate-100">HTML5 Canvas Compositing</h3>
+              <h3 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-slate-100">Luma Masked Data Stream</h3>
               <p className="text-slate-400 text-xs font-light leading-relaxed">
-                Canvas drawing loops offloaded with modular alpha trail rendering, bypassing the DOM layer entirely for seamless performance.
+                The canvas dynamically samples image luminosity data off-screen, translating high-contrast areas into an optimized ASCII particle matrix.
               </p>
             </div>
 
             <div className="glass-morphism rounded-lg p-6 border hover:border-slate-700 transition-all duration-300 hover:translate-y-[-2px] group">
               <span className={`block font-mono text-xs ${activeTheme.text} mb-2`}>03 // DYNAMIC BLENDING SYSTEM</span>
-              <h3 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-slate-100">Luminosity & Screen Blends</h3>
+              <h3 className="text-lg font-bold text-slate-200 mb-2 group-hover:text-slate-100">Glitch & Chromatic Shift</h3>
               <p className="text-slate-400 text-xs font-light leading-relaxed">
-                Hardware-accelerated CSS blend modes merge digital code streams with San Diego's skyline photo for an integrated glow effect.
+                Built-in chromatic aberration offsets (Cyan/Magenta) combined with screen composite modes deliver a cutting-edge CRT-inspired effect.
               </p>
             </div>
           </div>
