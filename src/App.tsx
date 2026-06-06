@@ -55,6 +55,12 @@ const PALETTES: Record<string, { name: string, data: ThemePalette }> = {
   }
 };
 
+const PREDEFINED_IMAGES = [
+  { id: 'sd-night', name: 'SD NIGHT', url: '/san-diego-skyline-night.png' },
+  { id: 'sd-sunset', name: 'SD SUNSET', url: '/san_diego_sunset.png' },
+  { id: 'coronado', name: 'CORONADO', url: '/coronado_bridge_night.png' },
+];
+
 function App() {
   const [activePalette, setActivePalette] = useState<string>('knicks');
   const [renderStyle, setRenderStyle] = useState<RenderStyle>('silhouette');
@@ -62,8 +68,26 @@ function App() {
   const [glyphMode, setGlyphMode] = useState<'binary' | 'matrix'>('matrix');
   const [speed, setSpeed] = useState<number>(45);
   const [density, setDensity] = useState<number>(10);
+  
+  const [activeImageId, setActiveImageId] = useState<string>('sd-night');
+  const [customImage, setCustomImage] = useState<string | null>(null);
 
   const currentPalette = PALETTES[activePalette].data;
+  const currentImageSrc = activeImageId === 'custom' && customImage 
+    ? customImage 
+    : PREDEFINED_IMAGES.find(img => img.id === activeImageId)?.url || '/san-diego-skyline-night.png';
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setCustomImage(event.target?.result as string);
+        setActiveImageId('custom');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="relative w-full h-screen overflow-hidden font-mono" style={{ backgroundColor: currentPalette.background }}>
@@ -78,6 +102,7 @@ function App() {
         motionType={motionType}
         speed={speed} 
         density={density} 
+        imageSrc={currentImageSrc}
       />
 
       {/* ========================================================================= */}
@@ -89,9 +114,47 @@ function App() {
         <div className="glass-morphism rounded-xl border border-white/10 p-6 space-y-8 shadow-2xl pointer-events-auto backdrop-blur-xl bg-black/40 text-slate-200">
           
           <header className="border-b border-white/10 pb-4">
-            <h1 className="text-xl font-bold tracking-tight text-white mb-1">Background Gen <span className="text-xs text-white/50 align-top">v1.0</span></h1>
+            <h1 className="text-xl font-bold tracking-tight text-white mb-1">Background Gen <span className="text-xs text-white/50 align-top">v1.1</span></h1>
             <p className="text-xs text-slate-400">Configure real-time bespoke aesthetics.</p>
           </header>
+
+          {/* SOURCE IMAGE SELECTOR */}
+          <div className="space-y-3">
+            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Source Image</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PREDEFINED_IMAGES.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setActiveImageId(img.id)}
+                  className={`px-2 py-2 text-[10px] rounded border text-center transition-all ${
+                    activeImageId === img.id
+                      ? 'border-white/40 bg-white/10 text-white shadow-inner' 
+                      : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  {img.name}
+                </button>
+              ))}
+            </div>
+            <div className="relative mt-2">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <button className={`w-full px-3 py-2 text-[10px] rounded border text-center transition-all ${
+                activeImageId === 'custom'
+                  ? 'border-white/40 bg-white/10 text-white shadow-inner'
+                  : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
+              }`}>
+                {activeImageId === 'custom' ? 'CUSTOM UPLOAD ACTIVE' : '+ UPLOAD CUSTOM IMAGE'}
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-500 leading-tight">
+              Tip: High-contrast photos (night cityscapes, blueprints) produce the best stylized results.
+            </p>
+          </div>
 
           {/* PALETTE SELECTOR */}
           <div className="space-y-3">

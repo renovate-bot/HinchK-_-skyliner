@@ -53,6 +53,7 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
     let lastDrawTime = 0;
 
     const image = new Image();
+    image.crossOrigin = 'Anonymous';
     image.src = imageSrc;
     
     let columns = 0;
