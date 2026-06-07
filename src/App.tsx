@@ -56,9 +56,9 @@ const PALETTES: Record<string, { name: string, data: ThemePalette }> = {
 };
 
 const PREDEFINED_IMAGES = [
-  { id: 'sd-night', name: 'SD NIGHT', url: '/san-diego-skyline-night.png', threshold: 30, invert: false },
-  { id: 'sd-sunset', name: 'SD SUNSET', url: '/san_diego_sunset.png', threshold: 100, invert: true },
-  { id: 'coronado', name: 'CORONADO', url: '/coronado_bridge_night.png', threshold: 50, invert: false },
+  { id: 'sd-night', name: 'SD NIGHT', url: 'san-diego-skyline-night.png', threshold: 30, invert: false },
+  { id: 'sd-sunset', name: 'SD SUNSET', url: 'san_diego_sunset.png', threshold: 100, invert: true },
+  { id: 'coronado', name: 'CORONADO', url: 'coronado_bridge_night.png', threshold: 50, invert: false },
 ];
 
 function App() {
@@ -76,7 +76,7 @@ function App() {
   const currentPalette = PALETTES[activePalette].data;
   const currentImageSrc = activeImageId === 'custom' && customImage 
     ? customImage 
-    : PREDEFINED_IMAGES.find(img => img.id === activeImageId)?.url || '/san-diego-skyline-night.png';
+    : PREDEFINED_IMAGES.find(img => img.id === activeImageId)?.url || 'san-diego-skyline-night.png';
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
