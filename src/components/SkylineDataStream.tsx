@@ -16,6 +16,9 @@ interface SkylineDataStreamProps {
   imageSrc: string | null;
   lumaThreshold: number;
   invertMask: boolean;
+  bgImageOpacity: number;
+  colorMapping: 'random' | 'luma';
+  contrast: number;
 }
 
 const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
@@ -26,15 +29,23 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
   imageSrc,
   lumaThreshold,
   invertMask,
+  bgImageOpacity,
+  colorMapping,
+  contrast,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [lastSrc, setLastSrc] = useState<string | null>(null);
+
+  if (imageSrc !== lastSrc) {
+    setLastSrc(imageSrc);
+    setImageLoaded(false);
+  }
 
   // Load the image
   useEffect(() => {
     if (!imageSrc) return;
-    setImageLoaded(false);
     const img = new Image();
     img.src = imageSrc;
     img.onload = () => {
@@ -101,6 +112,13 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
       const drawX = (canvas.width - drawWidth) / 2;
       const drawY = (canvas.height - drawHeight) / 2;
 
+      // Draw faint original background image for extra depth and clarity
+      if (bgImageOpacity > 0) {
+        ctx.globalAlpha = bgImageOpacity;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        ctx.globalAlpha = 1.0;
+      }
+
       // Draw to offscreen canvas to get pixel data
       offCanvas.width = canvas.width;
       offCanvas.height = canvas.height;
@@ -138,7 +156,13 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
           const b = data[i + 2];
           
           // Calculate perceptual brightness (Luma)
-          const luma = r * 0.299 + g * 0.587 + b * 0.114;
+          let luma = r * 0.299 + g * 0.587 + b * 0.114;
+
+          // Apply contrast adjustment
+          if (contrast !== 1.0) {
+            luma = ((luma - 128) * contrast) + 128;
+            luma = Math.max(0, Math.min(255, luma));
+          }
 
           // Mask Check
           const pass = invertMask ? luma < lumaThreshold : luma > lumaThreshold;
@@ -154,9 +178,28 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
             
             const char = charGrid[x]?.[y] || '1';
 
-            // Base color from palette
-            const colorArray = [palette.primary, palette.secondary, palette.accent, palette.text];
-            let color = colorArray[Math.floor(Math.random() * colorArray.length)];
+            // Select color based on colorMapping
+            let color: string;
+            if (colorMapping === 'luma') {
+              // Calculate relative distance from threshold
+              const relativeLuma = invertMask 
+                ? (lumaThreshold - luma) / Math.max(1, lumaThreshold)
+                : (luma - lumaThreshold) / Math.max(1, 255 - lumaThreshold);
+              
+              if (relativeLuma > 0.6) {
+                color = palette.accent;
+              } else if (relativeLuma > 0.35) {
+                color = palette.text;
+              } else if (relativeLuma > 0.15) {
+                color = palette.primary;
+              } else {
+                color = palette.secondary;
+              }
+            } else {
+              // Base color from palette
+              const colorArray = [palette.primary, palette.secondary, palette.accent, palette.text];
+              color = colorArray[Math.floor(Math.random() * colorArray.length)];
+            }
             
             // Chromatic Glitch effect on very bright spots
             const isVeryBright = invertMask ? luma < Math.max(0, lumaThreshold - 50) : luma > Math.min(255, lumaThreshold + 50);
@@ -174,16 +217,13 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
               ctx.globalCompositeOperation = 'source-over';
             } else {
               // Apply opacity based on how far past the threshold it is, to give depth
-              let opacity = 1;
-              if (invertMask) {
-                // Closer to 0 is more opaque
-                opacity = 1 - (luma / lumaThreshold);
-              } else {
-                // Closer to 255 is more opaque
-                opacity = (luma - lumaThreshold) / (255 - lumaThreshold);
-              }
+              // Apply opacity based on how far past the threshold it is, to give depth
+              const rawOpacity = invertMask
+                ? 1 - (luma / lumaThreshold)
+                : (luma - lumaThreshold) / (255 - lumaThreshold);
+              
               // Map opacity to a minimum of 0.3 so it doesn't totally disappear if it passed the threshold
-              opacity = Math.max(0.3, Math.min(1, opacity));
+              const opacity = Math.max(0.3, Math.min(1, rawOpacity));
               
               ctx.globalAlpha = opacity;
               ctx.fillStyle = color;
@@ -201,7 +241,7 @@ const SkylineDataStream: React.FC<SkylineDataStreamProps> = ({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [mode, palette, speed, density, imageLoaded, lumaThreshold, invertMask]);
+  }, [mode, palette, speed, density, imageLoaded, lumaThreshold, invertMask, bgImageOpacity, colorMapping, contrast]);
 
   return (
     <canvas

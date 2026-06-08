@@ -73,6 +73,10 @@ function App() {
   const [activeImageId, setActiveImageId] = useState<string>('sd-night');
   const [customImage, setCustomImage] = useState<string | null>(null);
 
+  const [bgImageOpacity, setBgImageOpacity] = useState<number>(0.08); // Subtle background skyline blend by default
+  const [colorMapping, setColorMapping] = useState<'random' | 'luma'>('luma'); // Luma mapping by default
+  const [contrast, setContrast] = useState<number>(1.2); // Sightly boosted contrast by default
+
   const currentPalette = PALETTES[activePalette].data;
   const currentImageSrc = activeImageId === 'custom' && customImage 
     ? customImage 
@@ -104,6 +108,9 @@ function App() {
         imageSrc={currentImageSrc}
         lumaThreshold={lumaThreshold}
         invertMask={invertMask}
+        bgImageOpacity={bgImageOpacity}
+        colorMapping={colorMapping}
+        contrast={contrast}
       />
 
       {/* ========================================================================= */}
@@ -115,7 +122,7 @@ function App() {
         <div className="glass-morphism rounded-xl border border-white/10 p-6 space-y-8 shadow-2xl pointer-events-auto backdrop-blur-xl bg-black/40 text-slate-200">
           
           <header className="border-b border-white/10 pb-4">
-            <h1 className="text-xl font-bold tracking-tight text-white mb-1">Background Gen <span className="text-xs text-white/50 align-top">v1.1</span></h1>
+            <h1 className="text-xl font-bold tracking-tight text-white mb-1">Background Gen <span className="text-xs text-white/50 align-top">v1.2</span></h1>
             <p className="text-xs text-slate-400">Configure real-time bespoke aesthetics.</p>
           </header>
 
@@ -179,7 +186,7 @@ function App() {
             </div>
           </div>
 
-          {/* GLYPH MODE */}
+          {/* GLYPH MODULE */}
           <div className="space-y-3">
             <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Glyph Module</label>
             <div className="grid grid-cols-2 gap-2">
@@ -198,6 +205,29 @@ function App() {
                 }`}
               >
                 DATA MATRIX
+              </button>
+            </div>
+          </div>
+
+          {/* COLOR MAPPING */}
+          <div className="space-y-3">
+            <label className="block text-[10px] font-bold text-slate-400 tracking-widest uppercase">Color Distribution</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setColorMapping('random')}
+                className={`px-3 py-2 text-xs rounded border text-center transition-all ${
+                  colorMapping === 'random' ? 'border-white/40 bg-white/10 text-white shadow-inner' : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
+                }`}
+              >
+                RANDOM
+              </button>
+              <button
+                onClick={() => setColorMapping('luma')}
+                className={`px-3 py-2 text-xs rounded border text-center transition-all ${
+                  colorMapping === 'luma' ? 'border-white/40 bg-white/10 text-white shadow-inner' : 'border-white/5 bg-black/20 text-slate-400 hover:border-white/20'
+                }`}
+              >
+                LUMA-MAPPED
               </button>
             </div>
           </div>
@@ -227,11 +257,43 @@ function App() {
               </div>
               <input
                 type="range"
-                min="0.1"
-                max="3"
-                step="0.1"
+                min="1"
+                max="100"
+                step="1"
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                <span>Background Opacity</span>
+                <span className="text-white">{Math.round(bgImageOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="0.4"
+                step="0.01"
+                value={bgImageOpacity}
+                onChange={(e) => setBgImageOpacity(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                <span>Contrast</span>
+                <span className="text-white">{contrast.toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="2.5"
+                step="0.1"
+                value={contrast}
+                onChange={(e) => setContrast(Number(e.target.value))}
                 className="w-full h-1 bg-white/20 rounded appearance-none outline-none focus:outline-none cursor-pointer"
               />
             </div>
